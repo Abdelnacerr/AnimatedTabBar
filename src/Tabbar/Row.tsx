@@ -18,7 +18,6 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
     fontSize: 18,
-    fontFamily: "GothamRounded-Medium",
     marginRight: 8,
   },
 });

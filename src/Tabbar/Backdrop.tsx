@@ -14,7 +14,7 @@ const Backdrop = ({ open }: BackdropProps) => {
     pointerEvents: open.value < 1 ? ("none" as const) : ("box-none" as const),
   }));
   const style = useAnimatedStyle(() => ({
-    backgroundColor: "grey",
+    backgroundColor: "red",
     opacity: 0.6 * open.value,
   }));
   return (
