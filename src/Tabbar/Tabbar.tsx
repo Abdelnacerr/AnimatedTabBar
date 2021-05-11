@@ -1,10 +1,11 @@
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
-import Svg, { Defs, LinearGradient, Stop } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Stop, Path, Mask, Rect } from "react-native-svg";
 import { Feather as Icon } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { withTiming } from "react-native-reanimated";
+import Animated, { interpolate, useAnimatedProps, withTiming, Extrapolate } from "react-native-reanimated";
+import { mix } from "react-native-redash";
 
 import StaticTabbar, { SIZE } from "./StaticTabbar";
 import Row from "./Row";
@@ -42,12 +43,57 @@ const styles = StyleSheet.create({
   },
 });
 
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+
+const arc = ( x: number, y: number, reverse=false) => 
+  `a ${R} ${R} 0 0 ${reverse ? 0: 1} ${x} ${y}`
+
+const H = HEIGHT - SIZE - 2 * R;
+const W = WIDTH - 2 * R;
+const W_2 = WIDTH / 2 - 4 * R;
+const S = SIZE - 2 * R;
+const d = [
+  `M 0 ${R}`,
+  arc(R, -R),
+  `h ${W}`,
+  arc(R, R),
+  `v ${H}`,
+  arc(-R, R),
+  `h ${-W_2}`,
+  arc(-R, R, true),
+  `v ${S}`,
+  arc(-R, R),
+  `h ${-S}`,
+  arc(-R, -R),
+  `v ${-S}`,
+  arc(-R, -R, true),
+  `h ${-W_2}`,
+  arc(-R, -R),
+  "Z",
+].join(" ");
+
+
 interface TabbarProps {
   open: Animated.SharedValue<number>;
 }
 
 const Tabbar = ({ open }: TabbarProps) => {
   const insets = useSafeAreaInsets();
+  const animatedProps = useAnimatedProps(() =>{
+    const height = mix(open.value, SIZE, HEIGHT);
+    const width = interpolate(
+      height, 
+      [2 * SIZE, HEIGHT], 
+      [SIZE, WIDTH],
+      Extrapolate.CLAMP
+    );
+    const x = interpolate(width, [SIZE, WIDTH], [WIDTH / 2 - SIZE / 2, 0]);
+    const y = interpolate(height, [SIZE, WIDTH], [HEIGHT - SIZE / 2, 0]);
+
+    return {
+      x, y, width, height
+    }
+  })
   return (
     <>
       <TouchableWithoutFeedback
@@ -74,7 +120,16 @@ const Tabbar = ({ open }: TabbarProps) => {
                   <Stop offset={0} stopColor={END_COLOR} />
                   <Stop offset={1} stopColor={COLOR} />
                 </LinearGradient>
+                <Mask id="mask">
+                  <AnimatedRect 
+                    animatedProps= {animatedProps}  
+                    rx={R}
+                    ry={R}
+                    fill="white" 
+                    />
+                </Mask>
               </Defs>
+              <Path d={d} fill='url(#gradient)' mask='url(#mask)' />
             </Svg>
           </View>
           <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
